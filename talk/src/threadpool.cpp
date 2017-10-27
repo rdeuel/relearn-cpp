@@ -1,57 +1,14 @@
 
-#include <deque>
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <utility>
-#include <vector>
 
 #include <pthread.h>
-#include <unistd.h>
+
+#include "threadpool.h"
 
 using namespace std;
-
-/**
- * types
- */
-
-typedef void *(*ThreadProc)(void*);
-
-class Task {
-string _name;
-public:
-    Task(const string& name): _name(name) {cout << "constructing Task" << endl;}
-    string& name() {return _name;}
-    virtual void operator()(){cout << "default operator()" << endl;}
-};
-
-class Thread {
-    string _name;
-    ThreadProc _proc;
-    pthread_t _thread;
-    void* _ctx;
-public:
-    Thread(const string &name, ThreadProc proc, void* ctx);
-    void start();
-    void join();
-};
-
-class Threadpool {
-    vector<Thread> _threads;
-    deque<Task*> _tasks;
-    const int _max_pending;
-    pthread_mutex_t _lock;
-    pthread_cond_t _is_accepting_new_tasks;
-    pthread_cond_t _has_pending_tasks;
-    static void* _proc(void* context);
-    bool _exiting;
-
-public:
-    Threadpool(int size, int max_pending);
-    void start();
-    void submit(Task* task);
-    virtual ~Threadpool();
-};
 
 /**
  * implementations
@@ -156,36 +113,3 @@ Threadpool::_proc(void* context) {
     }
 }
 
-/**
- * test
- */
-
-class PrintTask: public Task {
-public:
-    PrintTask(const string& name): Task(name){cout << "constructing" << name << endl;}
-    virtual void operator()(){cout << "This is task " << name() << endl;}
-};
-
-int main() {
-    Threadpool tp(5, 100);
-    tp.start();
-    for (int i = 0; i < 5; ++i) {
-        ostringstream s;
-        s << i;
-        PrintTask* pt = new PrintTask(s.str());
-        tp.submit(pt);
-    }
-    sleep(3);
-/*
-    ostringstream s;
-    s << 10; 
-    PrintTask* pt = new PrintTask(s.str());
-    Task* ppt = pt;
-    (*ppt)();
-    deque<Task*> deq;
-    deq.push_front(ppt);
-    Task* popped = deq.back();
-    (*popped)();
-    return 0;
-*/
-}
