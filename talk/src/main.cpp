@@ -1,3 +1,4 @@
+#include "spdlog/spdlog.h"
 
 #include <iostream>
 #include <sstream>
@@ -5,6 +6,7 @@
 #include <unistd.h>
 
 #include "threadpool.h"
+#include "logger.h"
 
 using namespace std;
 
@@ -14,11 +16,19 @@ using namespace std;
 
 class PrintTask: public Task {
 public:
-    PrintTask(const string& name): Task(name){cout << "constructing" << name << endl;}
-    virtual void operator()(){cout << "This is task " << name() << endl;}
+    PrintTask(const string& name): Task(name){
+        LOG->debug("constructing {}", name);
+    }
+    virtual void operator()(){
+        LOG->debug("This is task {}", name());
+    }
 };
 
 int main() {
+    //auto console = spdlog::stdout_color_mt("console");
+    //console->info("Welcome to spdlog!");
+    console_log_init();
+    LOG->info("yeah that's right");
     Threadpool tp(5, 100);
     tp.start();
     for (int i = 0; i < 5; ++i) {

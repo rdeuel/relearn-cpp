@@ -1,11 +1,13 @@
 
-#include <iostream>
 #include <sstream>
 #include <string>
 #include <utility>
 
 #include <pthread.h>
 
+#include "spdlog/spdlog.h"
+
+#include "logger.h"
 #include "threadpool.h"
 
 using namespace std;
@@ -76,7 +78,7 @@ Threadpool::submit(Task* task) {
     while(_tasks.size() >= _max_pending) {
         pthread_cond_wait(&_is_accepting_new_tasks, &_lock);
     }
-    cout << "pushing task" << endl;
+    LOG->debug("pushing task");
     _tasks.push_front(task);
     pthread_cond_signal(&_has_pending_tasks);
     if (_tasks.size() < _max_pending) {
@@ -87,7 +89,7 @@ Threadpool::submit(Task* task) {
 
 void*
 Threadpool::_proc(void* context) {
-    cout << "entering _proc" << endl;
+    LOG->debug("entering _proc");
     Threadpool* threadpool = (Threadpool*)context;
 
     while(1) {
@@ -97,9 +99,9 @@ Threadpool::_proc(void* context) {
             pthread_cond_wait(&threadpool->_has_pending_tasks,
                               &threadpool->_lock);
         }
-        cout << "proc ready" << endl;
+        LOG->debug("proc ready");
         if (threadpool->_exiting) {
-            cout << "exiting" << endl;
+            LOG->debug("exiting");
             pthread_mutex_unlock(&threadpool->_lock);
             return NULL;
         } else if (threadpool->_tasks.size() != 0) {
@@ -107,7 +109,7 @@ Threadpool::_proc(void* context) {
             threadpool->_tasks.pop_back();
             pthread_cond_signal(&threadpool->_is_accepting_new_tasks);
             pthread_mutex_unlock(&threadpool->_lock);
-            cout << "running task" << endl;
+            LOG->debug("running task");
             (*task)();
         }
     }

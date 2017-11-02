@@ -1,27 +1,40 @@
-.PHONY: clean
+.PHONY: clean test test-bin
 
 MKDIR_P ?= mkdir -p
-CC = gcc
-CXX = g++
+#CC = gcc
+#CXX = g++
+CC = clang
+CXX = clang
+SPDLOG = /home/rdeuel/git/spdlog
 
 TARGET_EXEC ?= a.out
 
 BUILD_DIR ?= ./build
 SRC_DIRS ?= ./src
+TEST_DIRS ?= ./tests
 
 SRCS := $(shell find $(SRC_DIRS) -name *.cpp -or -name *.c -or -name *.s)
 OBJS := $(SRCS:%=$(BUILD_DIR)/%.o)
+
+TESTS := $(shell find $(TEST_DIRS) -name *.cpp) $(patsubst %/main.cpp,,$(SRCS))
+TEST_OBJS := $(TESTS:%=$(BUILD_DIR)/%.o)
 DEPS := $(OBJS:.o=.d)
 
 INC_DIRS := $(shell find $(SRC_DIRS) -type d)
+INC_DIRS := $(INC_DIRS) $(SPDLOG)/include
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 
-CPPFLAGS ?= $(INC_FLAGS) -MMD -MP -pthread
+CPPFLAGS ?= $(INC_FLAGS) -MMD -MP -pthread -std=c++11 -g
 
 LDFLAGS ?= -lstdc++ -lpthread
 
 $(BUILD_DIR)/$(TARGET_EXEC): $(OBJS)
 	$(CC) $(OBJS) -o $@ $(LDFLAGS)
+
+test-bin: $(BUILD_DIR)/test
+
+$(BUILD_DIR)/test: $(OBJS) $(TEST_OBJS)
+	$(CC) $(TEST_OBJS) -o $@ $(LDFLAGS) -L/usr/local/lib64 -lgtest
 
 # assembly
 $(BUILD_DIR)/%.s.o: %.s
