@@ -18,6 +18,13 @@ public:
     }
 };
 
+void delayms(int milliseconds) {
+    struct timespec delay;
+    delay.tv_sec = milliseconds / 1000;
+    delay.tv_nsec = (milliseconds % 1000) * 1000000L;
+    nanosleep(&delay, &delay);
+}
+
 class TestTask: public Task {
     atomic<bool> _done;
     const int _task_number;
@@ -31,10 +38,7 @@ public:
     }
     virtual void operator()(){
         LOG->debug("starting task {}", _task_number);
-        struct timespec delay;
-        delay.tv_sec = _milliseconds / 1000;
-        delay.tv_nsec = (_milliseconds % 1000) * 1000000L;
-        nanosleep(&delay, &delay);
+        delayms(_milliseconds);
         LOG->debug("finishing task {}", _task_number);
         _done = true;
     }
@@ -48,7 +52,7 @@ public:
 
 TEST_F(ThreadpoolTest, all_tasks_complete) {
     LOG->debug("this is test 1: {}", _data);
-    Threadpool tp(4, 1000);
+    Threadpool tp(4, 2);
     tp.start();
     int num_tasks = 10;
     list<TestTask> tasks;
@@ -57,9 +61,6 @@ TEST_F(ThreadpoolTest, all_tasks_complete) {
         tp.submit(&tasks.back());
     }
 
-    struct timespec delay;
-    delay.tv_sec = 1;
-    delay.tv_nsec = 0;
     while (true) {
         int done_count = 0;
         for (list<TestTask>::iterator it = tasks.begin();
@@ -74,9 +75,7 @@ TEST_F(ThreadpoolTest, all_tasks_complete) {
             break;
         } else {
             LOG->debug("done count = {}, sleeping...", done_count);
-            nanosleep(&delay, &delay);
+            delayms(1000);
         }
     }
-    //TestTask task(0, 5500);
-    //task();
 }

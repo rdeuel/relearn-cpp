@@ -16,22 +16,6 @@ using namespace std;
  * implementations
  */
 
-Thread::Thread(const string& name, ThreadProc proc, void *ctx):
-     _name(name), _proc(proc), _ctx(ctx) {}
-
-void
-Thread::start() {
-    int ret = pthread_create(&_thread, NULL, _proc, _ctx);
-    if(ret) {
-        throw string("failed to create thread");
-    }
-}
-
-void
-Thread::join() {
-    pthread_join(_thread, NULL);
-}
-
 Threadpool::Threadpool(int size, int max_pending):
      _max_pending(max_pending), _exiting(false) {
     for (int i = 0; i < size; ++i) {
@@ -76,6 +60,7 @@ Threadpool::submit(Task* task) {
         throw string("Exit requested, can't accept new tasks");
     }
     while(_tasks.size() >= _max_pending) {
+        LOG->warn("Cannot submit new tasks, blocking for a bit");
         pthread_cond_wait(&_is_accepting_new_tasks, &_lock);
     }
     LOG->debug("pushing task");

@@ -11,11 +11,7 @@
 
 #include <pthread.h>
 
-/**
- * types
- */
-
-typedef void *(*ThreadProc)(void*);
+#include "thread.h"
 
 class Task {
     std::string _name;
@@ -23,17 +19,6 @@ public:
     Task(const std::string& name): _name(name) {}
     const std::string& name() {return _name;}
     virtual void operator()() = 0;
-};
-
-class Thread {
-    std::string _name;
-    ThreadProc _proc;
-    pthread_t _thread;
-    void* _ctx;
-public:
-    Thread(const std::string &name, ThreadProc proc, void* ctx);
-    void start();
-    void join();
 };
 
 class Threadpool {
