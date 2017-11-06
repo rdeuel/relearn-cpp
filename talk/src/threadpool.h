@@ -35,6 +35,7 @@ public:
     Threadpool(int size, int max_pending);
     void start();
     void submit(Task* task);
+    int num_pending();
     virtual ~Threadpool();
 };
 #endif // _THREADPOOL_H

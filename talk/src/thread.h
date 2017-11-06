@@ -1,7 +1,10 @@
 #ifndef _THREAD_H
 #define _THREAD_H
 
+#include <string>
 #include <pthread.h>
+
+using namespace std;
 
 typedef void *(*ThreadProc)(void*);
 

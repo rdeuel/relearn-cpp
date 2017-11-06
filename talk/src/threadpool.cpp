@@ -72,6 +72,14 @@ Threadpool::submit(Task* task) {
     pthread_mutex_unlock(&_lock);
 }
 
+int
+Threadpool::num_pending() {
+    pthread_mutex_lock(&_lock);
+    int ret = _tasks.size();
+    pthread_mutex_unlock(&_lock);
+    return ret;
+}
+
 void*
 Threadpool::_proc(void* context) {
     LOG->debug("entering _proc");
