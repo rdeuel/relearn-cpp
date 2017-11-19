@@ -3,25 +3,14 @@
 #define _THREADPOOL_H
 
 #include <deque>
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <utility>
 #include <vector>
 
 #include <pthread.h>
 
+#include "executor.h"
 #include "thread.h"
 
-class Task {
-    std::string _name;
-public:
-    Task(const std::string& name): _name(name) {}
-    const std::string& name() {return _name;}
-    virtual void operator()() = 0;
-};
-
-class Threadpool {
+class Threadpool : public Executor {
     std::vector<Thread> _threads;
     std::deque<Task*> _tasks;
     const int _max_pending;

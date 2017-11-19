@@ -84,7 +84,7 @@ public:
 
 void
 ThreadpoolTest::assert_completes(int max_running, int max_pending) {
-    float longest_task = 1000.0;
+    float longest_task = 250.0;
     float shortest_task = 0.0;
     float average_task = (longest_task - shortest_task) / 2;
     int num_tasks = 1000;
@@ -146,6 +146,6 @@ TEST_F(ThreadpoolTest, test_50t25p) {
     assert_completes(50, 25);
 }
 
-TEST_F(ThreadpoolTest, test_1t500p) {
-    assert_completes(1, 5);
-}
+//TEST_F(ThreadpoolTest, test_1t500p) {
+//    assert_completes(1, 5);
+//}

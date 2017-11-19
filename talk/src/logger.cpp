@@ -5,7 +5,7 @@ using namespace std;
 
 shared_ptr<spdlog::logger> LOG;
 
-void consul_log_init() {
+void console_log_init() {
     LOG = spdlog::stdout_logger_mt("talk");
     LOG->set_level(spdlog::level::debug);
     LOG->set_pattern("%T | thread-%t | %L | %v");
