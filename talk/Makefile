@@ -6,6 +6,7 @@ MKDIR_P ?= mkdir -p
 CC = clang
 CXX = clang
 SPDLOG = /home/rdeuel/git/spdlog
+GTEST = /home/rdeuel/git/googletest/googletest
 
 TARGET_EXEC ?= a.out
 
@@ -22,11 +23,12 @@ DEPS := $(OBJS:.o=.d)
 
 INC_DIRS := $(shell find $(SRC_DIRS) -type d)
 INC_DIRS := $(INC_DIRS) $(SPDLOG)/include
+INC_DIRS := $(INC_DIRS) $(GTEST)/include
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 
 CPPFLAGS ?= $(INC_FLAGS) -MMD -MP -pthread -std=c++11 -g
 
-LDFLAGS ?= -lstdc++ -lpthread
+LDFLAGS ?= -lstdc++ -lpthread -lgtest -L$(GTEST)/build -lm
 
 $(BUILD_DIR)/$(TARGET_EXEC): $(OBJS)
 	$(CC) $(OBJS) -o $@ $(LDFLAGS)
@@ -34,7 +36,7 @@ $(BUILD_DIR)/$(TARGET_EXEC): $(OBJS)
 test-bin: $(BUILD_DIR)/test
 
 $(BUILD_DIR)/test: $(OBJS) $(TEST_OBJS)
-	$(CC) $(TEST_OBJS) -o $@ $(LDFLAGS) -L/usr/local/lib64 -lgtest
+	$(CC) $(TEST_OBJS) -o $@ $(LDFLAGS)
 
 # assembly
 $(BUILD_DIR)/%.s.o: %.s
