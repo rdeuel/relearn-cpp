@@ -37,7 +37,15 @@ NewConnection::operator()() {
         while (!end_of_read) {
             int count = recv(_sockfd, req.data() + num_read, MAX_READ, 0);
             if (count < 0) {
-                throw runtime_error("ERROR reading");
+                if (errno == ECONNRESET) {
+                    // client closed the connection
+                    end_of_read = end_of_connection = true;
+                } else {
+                    ostringstream msg;
+                    msg << "ERROR " << errno
+                        << " reading from socket:" << strerror(errno);
+                    throw runtime_error(msg.str());
+                }
             } else if (count == 0) {
                 // connection closed
                 end_of_connection = end_of_read = true;

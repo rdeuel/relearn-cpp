@@ -2,6 +2,7 @@
 #include "gtest/gtest.h"
 #include "logger.h"
 
+#include <exception>
 #include <vector>
 
 #include "executor.h"
@@ -41,7 +42,46 @@ public:
     virtual void SetUp() {
         LOG->debug("Running SetUp for ListenerTest");
     }
+    int retry_connect(struct sockaddr_in* addr);
 };
+
+int
+ListenerTest::retry_connect(struct sockaddr_in* addr) {
+    bool connected = false;
+    int timer = 0;
+    int sock;
+    while (!connected) { 
+        sock = socket(AF_INET, SOCK_STREAM, 0);
+        if (sock < 0) {
+            throw runtime_error("Failed to create socket");
+        }
+        int ret = connect(sock,
+                          (struct sockaddr *)addr,
+                          sizeof(struct sockaddr_in));
+        if (ret < 0) {
+            if (errno == ECONNREFUSED) {
+                if (timer >= 10) {
+                    ostringstream msg;
+                    msg << "Failed to connect after "
+                        << timer << " seconds, aborting";
+                    throw runtime_error(msg.str());
+                } else {
+                    sleep(2);
+                    timer += 2;
+                }
+            } else {
+                ostringstream msg;
+                msg << "error " << errno
+                    << " on connect: " << strerror(errno);
+                throw runtime_error(msg.str());
+            }
+            close(sock);
+        } else {
+            connected = true;
+        }
+    }
+    return sock;
+}
 
 TEST_F(ListenerTest, all_tasks_complete) {
     EchoHandler handler;
@@ -59,38 +99,14 @@ TEST_F(ListenerTest, all_tasks_complete) {
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(8080);
       
-    // Convert IPv4 and IPv6 addresses from text to binary form
     ASSERT_GT(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr), 0);
 
-    bool connected = false;
-    int timer = 0;
-    int sock;
-    while (!connected) { 
-        sock = socket(AF_INET, SOCK_STREAM, 0);
-    	ASSERT_GE(sock, 0);
-        int ret = connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
-        if (ret < 0) {
-            if (errno == ECONNREFUSED) {
-                if (timer >= 10) {
-                    ASSERT_TRUE(connected) << "Failed to connect after "
-                                           << timer << " seconds, aborting";
-                } else {
-                    sleep(2);
-                    timer += 2;
-                }
-            } else {
-                ASSERT_GE(ret, 0) << "error " << errno
-                                  << " on connect: " << strerror(errno);
-            }
-            close(sock);
-        } else {
-            connected = true;
-        }
-    }
+    int sock = retry_connect(&serv_addr);
     send(sock , hello , strlen(hello) , 0 );
     printf("Hello message sent\n");
     int valread = read( sock , buffer, 1024);
 	close(sock);
+    ASSERT_STREQ(buffer, hello);
     printf("%s\n",buffer );
 	listener.join();
 }
