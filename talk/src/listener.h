@@ -34,8 +34,10 @@ class Listener : public Thread {
 	int _port;
 	Executor& _executor;
     MessageHandler& _handler;
+    int _stop_eventfd;
 public:
     Listener(const string& bind_addr, int port,
              Executor& executor, MessageHandler& handler);
+    void stop();
 };
 #endif // _LISTENER_H

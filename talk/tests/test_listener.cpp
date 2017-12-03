@@ -103,10 +103,9 @@ TEST_F(ListenerTest, all_tasks_complete) {
 
     int sock = retry_connect(&serv_addr);
     send(sock , hello , strlen(hello) , 0 );
-    printf("Hello message sent\n");
     int valread = read( sock , buffer, 1024);
 	close(sock);
     ASSERT_STREQ(buffer, hello);
-    printf("%s\n",buffer );
+    listener.stop();
 	listener.join();
 }
