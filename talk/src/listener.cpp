@@ -40,6 +40,7 @@ NewConnection::operator()() {
         size_t num_read = 0;
         while (!end_of_read) {
             int count = recv(_sockfd, req.data() + num_read, MAX_READ, 0);
+            LOG->debug("received {} bytes", count);
             if (count < 0) {
                 if (errno == ECONNRESET) {
                     // client closed the connection
@@ -62,25 +63,38 @@ NewConnection::operator()() {
                 if (num_read == req.capacity()) {
                     // read again
                     req.resize(req.capacity() + MAX_READ);
+                    LOG->debug("Resizing, new capacity = {}", req.capacity());
                 } else {
                     // make sure the vector knows its size
                     req.resize(num_read);
                     end_of_read = true;
                 }
             }
-        }
+        } // end of read
 
         if (req.size() > 0) {
             LOG->debug("Received request of size {}", req.size());
-            vector<char> resp = _handle_message(_client_addr, req);
-            if (resp.size() > 0) {
-                LOG->debug("Returning response of size {}", resp.size());
-                size_t written = send(_sockfd, resp.data(), req.capacity(), 0);
+            vector<char> resp;
+            MessageHandler::Status status = _handle_message(_client_addr, req, resp);
+            if (status == MessageHandler::Status::MoreData) {
+                LOG->debug("Handler needs more from the client");
             } else {
-                LOG->debug("No response to send back.");
+                if (resp.size() > 0) {
+                    LOG->debug("Returning response of size {}", resp.size());
+                    send(_sockfd, resp.data(), req.size(), 0);
+                } else {
+                    LOG->debug("No response to send back.");
+                }
+                if (status == MessageHandler::Status::Close) {
+                    LOG->debug("Handler tells us to Close, we close.");
+                    end_of_connection = true;
+                } else {
+                    LOG->debug("Keeping connection alive");
+                }
             }
         }
-    }
+    } // end of connection
+    shutdown(_sockfd, SHUT_RDWR);
 }
 
 void*

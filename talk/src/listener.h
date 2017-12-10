@@ -10,8 +10,14 @@
 #include "thread.h"
 
 struct MessageHandler {
-    virtual std::vector<char> operator()(const std::string& client_addr,
-                                         const std::vector<char>& req) = 0;
+    enum class Status {
+        MoreData,
+        KeepAlive,
+        Close
+    };
+    virtual Status operator()(const std::string& client_addr,
+                              const std::vector<char>& req,
+                              std::vector<char>& resp) = 0;
 };
 
 class NewConnection: public Task {
